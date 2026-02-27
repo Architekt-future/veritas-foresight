@@ -100,11 +100,6 @@ python foresight_app.py
 
 ---
 
-## Деплой на Render
-
-Детальна інструкція: [DEPLOY.md](DEPLOY.md)
-
----
 
 ## Екосистема Veritas Protocol
 
