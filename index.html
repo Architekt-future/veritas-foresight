@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Veritas Foresight</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+    --bg:       #07080a;
+    --surface:  #0d0f12;
+    --border:   #1a1f2a;
+    --dim:      #2a3040;
+    --text:     #c8cdd8;
+    --muted:    #5a6070;
+    --accent:   #4a9eff;
+    --gold:     #c8a84b;
+    --danger:   #ff4a4a;
+    --green:    #4aff8a;
+    --mono:     'Share Tech Mono', monospace;
+    --serif:    'Cormorant Garamond', serif;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* ── Starfield background ── */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+        radial-gradient(1px 1px at 20% 30%, rgba(74,158,255,0.15) 0%, transparent 100%),
+        radial-gradient(1px 1px at 80% 10%, rgba(200,168,75,0.1) 0%, transparent 100%),
+        radial-gradient(1px 1px at 50% 70%, rgba(74,158,255,0.08) 0%, transparent 100%),
+        radial-gradient(1px 1px at 10% 80%, rgba(200,168,75,0.06) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+}
+
+/* ── Header ── */
+.header {
+    text-align: center;
+    margin-bottom: 48px;
+}
+
+.header-eye {
+    font-size: 32px;
+    display: block;
+    margin-bottom: 12px;
+    animation: pulse 4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.05); }
+}
+
+.header-title {
+    font-family: var(--serif);
+    font-size: 36px;
+    font-weight: 300;
+    font-style: italic;
+    color: var(--gold);
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+}
+
+.header-sub {
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+}
+
+.header-version {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 2px 8px;
+    border: 1px solid var(--dim);
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+}
+
+/* ── Philosophy quote ── */
+.quote {
+    border-left: 2px solid var(--gold);
+    padding: 12px 20px;
+    margin-bottom: 36px;
+    color: var(--muted);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 15px;
+    line-height: 1.6;
+    background: rgba(200,168,75,0.03);
+}
+
+/* ── Field status bar ── */
+.field-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    margin-bottom: 24px;
+    font-size: 11px;
+    color: var(--muted);
+}
+
+.field-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex-shrink: 0;
+}
+.field-dot.live { background: var(--green); animation: blink 2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.field-topics {
+    flex: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.field-crisis {
+    flex-shrink: 0;
+    color: var(--text);
+}
+.field-crisis.high { color: var(--danger); }
+.field-crisis.mid { color: var(--gold); }
+
+/* ── Input section ── */
+.input-section {
+    margin-bottom: 32px;
+}
+
+.input-label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+}
+
+textarea {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 14px 16px;
+    resize: vertical;
+    min-height: 80px;
+    line-height: 1.6;
+    outline: none;
+    transition: border-color 0.2s;
+}
+textarea:focus { border-color: var(--dim); }
+textarea::placeholder { color: var(--muted); }
+
+.controls {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.ctrl-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.ctrl-group label { white-space: nowrap; }
+
+input[type=range] {
+    -webkit-appearance: none;
+    width: 80px;
+    height: 2px;
+    background: var(--dim);
+    outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+}
+
+.steps-val {
+    color: var(--accent);
+    min-width: 12px;
+}
+
+.toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    color: var(--muted);
+}
+.toggle input { display: none; }
+.toggle-track {
+    width: 28px; height: 14px;
+    background: var(--dim);
+    border-radius: 7px;
+    position: relative;
+    transition: background 0.2s;
+}
+.toggle input:checked ~ .toggle-track { background: var(--accent); }
+.toggle-thumb {
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #fff;
+    transition: left 0.2s;
+}
+.toggle input:checked ~ .toggle-track .toggle-thumb { left: 16px; }
+
+.btn-run {
+    margin-left: auto;
+    padding: 8px 28px;
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-run:hover { background: var(--accent); color: var(--bg); }
+.btn-run:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ── Loading ── */
+.loading {
+    display: none;
+    text-align: center;
+    padding: 40px;
+    color: var(--muted);
+}
+.loading.show { display: block; }
+.loading-spinner {
+    display: inline-block;
+    width: 20px; height: 20px;
+    border: 1px solid var(--dim);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 12px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Results ── */
+.results { display: none; }
+.results.show { display: block; }
+
+/* ── Final state ── */
+.state-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    margin-bottom: 24px;
+    overflow: hidden;
+}
+
+.state-header {
+    padding: 10px 16px;
+    background: rgba(74,158,255,0.05);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.state-dominant {
+    color: var(--accent);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 16px;
+}
+
+.state-entropy {
+    font-size: 10px;
+    color: var(--muted);
+}
+
+.futures-grid {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.future-row {
+    display: grid;
+    grid-template-columns: 160px 1fr 50px;
+    align-items: center;
+    gap: 12px;
+    font-size: 11px;
+}
+
+.future-name {
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.future-bar-wrap {
+    height: 4px;
+    background: var(--dim);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.future-bar {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.6s ease;
+}
+.future-bar.dominant { background: var(--gold); }
+
+.future-pct {
+    text-align: right;
+    color: var(--muted);
+    font-size: 11px;
+}
+.future-pct.dominant { color: var(--gold); }
+
+/* ── History ── */
+.history-title {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+}
+
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 32px;
+}
+
+.snap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 12px 16px;
+    display: grid;
+    grid-template-columns: 32px 1fr;
+    gap: 12px;
+    align-items: start;
+    transition: border-color 0.2s;
+}
+.snap:hover { border-color: var(--dim); }
+
+.snap-num {
+    color: var(--muted);
+    font-size: 10px;
+    padding-top: 2px;
+    text-align: right;
+}
+
+.snap-body {}
+
+.snap-realized {
+    color: var(--gold);
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+.snap-arg {
+    color: var(--muted);
+    font-size: 11px;
+    margin-bottom: 4px;
+    line-height: 1.4;
+}
+
+.snap-feedback {
+    color: var(--dim);
+    font-size: 10px;
+    font-style: italic;
+    border-left: 1px solid var(--dim);
+    padding-left: 8px;
+    margin-top: 6px;
+    line-height: 1.4;
+}
+
+/* ── Field context panel ── */
+.field-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 14px 16px;
+    margin-bottom: 24px;
+    font-size: 11px;
+}
+
+.field-panel-title {
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
+
+.field-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.field-tag {
+    padding: 2px 8px;
+    border: 1px solid var(--dim);
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+}
+
+.crisis-meter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    font-size: 10px;
+    color: var(--muted);
+}
+.crisis-bar-wrap {
+    flex: 1;
+    height: 2px;
+    background: var(--dim);
+}
+.crisis-bar {
+    height: 100%;
+    background: var(--green);
+    transition: width 0.6s ease;
+}
+.crisis-bar.mid { background: var(--gold); }
+.crisis-bar.high { background: var(--danger); }
+
+/* ── Error ── */
+.error-msg {
+    display: none;
+    padding: 12px 16px;
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    margin-bottom: 16px;
+    font-size: 12px;
+}
+.error-msg.show { display: block; }
+
+/* ── Footer ── */
+.footer {
+    text-align: center;
+    margin-top: 60px;
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    line-height: 2;
+}
+.footer a { color: var(--dim); text-decoration: none; }
+.footer a:hover { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+    <div class="header">
+        <span class="header-eye">🔭</span>
+        <div class="header-title">Veritas Foresight</div>
+        <div class="header-sub">Narrative Resonance Simulator</div>
+        <div class="header-version">v1.0 · part of Veritas Protocol ecosystem</div>
+    </div>
+
+    <div class="quote">
+        When you define a future, you begin to collapse it into being.<br>
+        An argument is not a logical construct — it is a vector in the probability space of possible worlds.
+    </div>
+
+    <div class="field-bar" id="fieldBar">
+        <div class="field-dot" id="fieldDot"></div>
+        <div class="field-topics" id="fieldTopics">loading information field...</div>
+        <div class="field-crisis" id="fieldCrisis"></div>
+    </div>
+
+    <div class="input-section">
+        <label class="input-label">Your argument — a claim, a narrative, a hypothesis</label>
+        <textarea id="argumentInput" rows="3"
+            placeholder="e.g. — AI regulation will collapse under industry pressure before 2026 ends"></textarea>
+
+        <div class="controls">
+            <div class="ctrl-group">
+                <label>steps</label>
+                <input type="range" id="stepsRange" min="1" max="10" value="5"
+                    oninput="document.getElementById('stepsVal').textContent=this.value">
+                <span class="steps-val" id="stepsVal">5</span>
+            </div>
+
+            <label class="toggle">
+                <input type="checkbox" id="useField" checked>
+                <div class="toggle-track"><div class="toggle-thumb"></div></div>
+                live field
+            </label>
+
+            <button class="btn-run" id="btnRun" onclick="runSimulation()">
+                ▶ simulate
+            </button>
+        </div>
+    </div>
+
+    <div class="error-msg" id="errorMsg"></div>
+    <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+        <div>computing resonance field...</div>
+    </div>
+
+    <div class="results" id="results">
+
+        <div class="state-panel">
+            <div class="state-header">
+                <span>probability field · final state</span>
+                <span class="state-entropy" id="entropyVal"></span>
+            </div>
+            <div style="padding:14px 16px 6px; font-size:11px; color:var(--muted);">dominant trajectory</div>
+            <div style="padding:0 16px 14px;">
+                <div class="state-dominant" id="dominantName"></div>
+                <div id="dominantDesc" style="font-size:11px;color:var(--muted);margin-top:4px;"></div>
+            </div>
+            <div class="futures-grid" id="futuresGrid"></div>
+        </div>
+
+        <div class="field-panel" id="fieldPanel" style="display:none">
+            <div class="field-panel-title">information field context used</div>
+            <div class="field-tags" id="fieldTagsResult"></div>
+            <div class="crisis-meter">
+                <span>crisis level</span>
+                <div class="crisis-bar-wrap">
+                    <div class="crisis-bar" id="crisisBar" style="width:0%"></div>
+                </div>
+                <span id="crisisVal">0</span>
+            </div>
+        </div>
+
+        <div class="history-title">iteration log</div>
+        <div class="history-list" id="historyList"></div>
+
+    </div>
+
+    <div class="footer">
+        <div>Veritas Foresight v1.0 · does not predict · measures resonance</div>
+        <div>
+            <a href="https://veritas-protocol.onrender.com" target="_blank">Veritas Protocol</a>
+            · <a href="https://github.com/Architekt-future/veritas-foresight" target="_blank">GitHub</a>
+        </div>
+    </div>
+
+</div>
+
+<script>
+const API = '';  // same origin
+
+// ── Load field context on startup ──────────────────────────────────────────────
+async function loadField() {
+    try {
+        const r = await fetch(`${API}/api/field`);
+        const d = await r.json();
+        if (d.status === 'ok') {
+            document.getElementById('fieldDot').classList.add('live');
+            const topics = d.hot_topics || [];
+            document.getElementById('fieldTopics').textContent =
+                topics.length ? topics.join(' · ') : 'no dominant topics detected';
+            const cl = d.crisis_level || 0;
+            const cEl = document.getElementById('fieldCrisis');
+            cEl.textContent = `crisis ${cl.toFixed(1)}`;
+            cEl.className = 'field-crisis' + (cl >= 6 ? ' high' : cl >= 3 ? ' mid' : '');
+        } else {
+            document.getElementById('fieldTopics').textContent = 'field unavailable';
+        }
+    } catch {
+        document.getElementById('fieldTopics').textContent = 'field offline';
+    }
+}
+
+// ── Run simulation ─────────────────────────────────────────────────────────────
+async function runSimulation() {
+    const argument = document.getElementById('argumentInput').value.trim();
+    if (!argument) {
+        showError('Please enter an argument to simulate.');
+        return;
+    }
+
+    const steps = parseInt(document.getElementById('stepsRange').value);
+    const useField = document.getElementById('useField').checked;
+
+    setLoading(true);
+    hideError();
+    document.getElementById('results').classList.remove('show');
+
+    try {
+        const resp = await fetch(`${API}/api/simulate`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ argument, steps, use_field: useField }),
+        });
+
+        if (!resp.ok) {
+            const err = await resp.json();
+            throw new Error(err.error || `HTTP ${resp.status}`);
+        }
+
+        const data = await resp.json();
+        renderResults(data);
+
+    } catch (e) {
+        showError(e.message);
+    } finally {
+        setLoading(false);
+    }
+}
+
+// ── Render results ─────────────────────────────────────────────────────────────
+function renderResults(data) {
+    const state = data.final_state;
+    const history = data.history;
+    const fc = data.field_context;
+
+    // Dominant
+    document.getElementById('dominantName').textContent = state.dominant;
+    const dom = state.futures.find(f => f.name === state.dominant);
+    document.getElementById('dominantDesc').textContent = dom ? dom.description : '';
+
+    // Entropy
+    const e = state.entropy;
+    const maxE = Math.log2(state.futures.length);
+    document.getElementById('entropyVal').textContent =
+        `entropy ${e.toFixed(3)} / ${maxE.toFixed(3)}`;
+
+    // Futures grid
+    const grid = document.getElementById('futuresGrid');
+    grid.innerHTML = '';
+    state.futures.forEach(f => {
+        const isDom = f.name === state.dominant;
+        const pct = (f.probability * 100).toFixed(1);
+        grid.innerHTML += `
+            <div class="future-row">
+                <div class="future-name" title="${f.core_logic}">${f.name}</div>
+                <div class="future-bar-wrap">
+                    <div class="future-bar ${isDom ? 'dominant' : ''}"
+                         style="width:${pct}%"></div>
+                </div>
+                <div class="future-pct ${isDom ? 'dominant' : ''}">${pct}%</div>
+            </div>`;
+    });
+
+    // Field context
+    if (fc && fc.hot_topics && fc.hot_topics.length) {
+        document.getElementById('fieldPanel').style.display = 'block';
+        const tags = document.getElementById('fieldTagsResult');
+        tags.innerHTML = fc.hot_topics.map(t =>
+            `<span class="field-tag">${t}</span>`).join('');
+        const cl = fc.crisis_level || 0;
+        const pct = Math.min(cl * 10, 100);
+        const bar = document.getElementById('crisisBar');
+        bar.style.width = pct + '%';
+        bar.className = 'crisis-bar' + (cl >= 6 ? ' high' : cl >= 3 ? ' mid' : '');
+        document.getElementById('crisisVal').textContent = cl.toFixed(1);
+    }
+
+    // History
+    const list = document.getElementById('historyList');
+    list.innerHTML = '';
+    history.forEach(snap => {
+        const isFirst = snap.iteration === 1;
+        list.innerHTML += `
+            <div class="snap">
+                <div class="snap-num">${snap.iteration}</div>
+                <div class="snap-body">
+                    <div class="snap-realized">→ ${snap.realized}</div>
+                    ${isFirst && snap.argument !== '(internal feedback only)'
+                        ? `<div class="snap-arg">⟨ ${esc(snap.argument)} ⟩</div>`
+                        : ''}
+                    <div class="snap-feedback">${esc(snap.feedback)}</div>
+                </div>
+            </div>`;
+    });
+
+    document.getElementById('results').classList.add('show');
+}
+
+function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function setLoading(on) {
+    document.getElementById('loading').classList.toggle('show', on);
+    document.getElementById('btnRun').disabled = on;
+}
+
+function showError(msg) {
+    const el = document.getElementById('errorMsg');
+    el.textContent = '⚠ ' + msg;
+    el.classList.add('show');
+}
+
+function hideError() {
+    document.getElementById('errorMsg').classList.remove('show');
+}
+
+// Enter to submit
+document.getElementById('argumentInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.ctrlKey) runSimulation();
+});
+
+// Load field on start
+loadField();
+</script>
+</body>
+</html>
