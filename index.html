@@ -7,16 +7,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
 <style>
 :root {
-    --bg:       #07080a;
-    --surface:  #0d0f12;
-    --border:   #1a1f2a;
-    --dim:      #2a3040;
-    --text:     #c8cdd8;
-    --muted:    #5a6070;
-    --accent:   #4a9eff;
-    --gold:     #c8a84b;
-    --danger:   #ff4a4a;
-    --green:    #4aff8a;
+    --bg:       #0e1117;
+    --surface:  #161b26;
+    --border:   #252d3d;
+    --dim:      #3a4560;
+    --text:     #e8ecf4;
+    --muted:    #8896b0;
+    --accent:   #5fb8ff;
+    --gold:     #e0b84a;
+    --danger:   #ff6060;
+    --green:    #50ffaa;
     --mono:     'Share Tech Mono', monospace;
     --serif:    'Cormorant Garamond', serif;
 }
@@ -27,7 +27,7 @@ body {
     background: var(--bg);
     color: var(--text);
     font-family: var(--mono);
-    font-size: 13px;
+    font-size: 14px;
     min-height: 100vh;
     overflow-x: hidden;
 }
@@ -104,10 +104,10 @@ body::before {
     border-left: 2px solid var(--gold);
     padding: 12px 20px;
     margin-bottom: 36px;
-    color: var(--muted);
+    color: #b0bdd4;
     font-family: var(--serif);
     font-style: italic;
-    font-size: 15px;
+    font-size: 16px;
     line-height: 1.6;
     background: rgba(200,168,75,0.03);
 }
@@ -121,8 +121,8 @@ body::before {
     background: var(--surface);
     border: 1px solid var(--border);
     margin-bottom: 24px;
-    font-size: 11px;
-    color: var(--muted);
+    font-size: 12px;
+    color: var(--text);
 }
 
 .field-dot {
@@ -332,6 +332,7 @@ input[type=range]::-webkit-slider-thumb {
 
 .future-name {
     color: var(--text);
+    font-size: 12px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -398,19 +399,19 @@ input[type=range]::-webkit-slider-thumb {
 
 .snap-realized {
     color: var(--gold);
-    font-size: 12px;
+    font-size: 13px;
     margin-bottom: 4px;
 }
 
 .snap-arg {
-    color: var(--muted);
+    color: var(--text);
     font-size: 11px;
     margin-bottom: 4px;
     line-height: 1.4;
 }
 
 .snap-feedback {
-    color: var(--dim);
+    color: var(--muted);
     font-size: 10px;
     font-style: italic;
     border-left: 1px solid var(--dim);
