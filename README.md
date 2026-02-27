@@ -114,8 +114,8 @@ python foresight_app.py
 ## Автори
 
 **Дмитро Холодняк** — архітектор, ідея  
-**Шукач (ChatGPT)** — оригінальний TimeNavigationEngine  
-**Орфей (Gemini)** — feedback-петля, філософська база  
+**Шукач (DeepSeek)** — оригінальний TimeNavigationEngine  
+**Орфей (GPT-5)** — feedback-петля, філософська база  
 **Claude (Anthropic)** — архітектура сервісу, веб-інтерфейс
 
 ---
