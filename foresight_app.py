@@ -152,8 +152,10 @@ def simulate():
             except Exception:
                 pass
 
+        temperature = float(data.get('temperature', 1.0))
+        temperature = max(0.1, min(temperature, 2.0))
         engine = ForesightEngine(futures=futures, seed=seed)
-        results = engine.run(argument, steps=steps, field_context=field_topics)
+        results = engine.run(argument, steps=steps, field_context=field_topics, temperature=temperature)
         raw_headlines = field_context_data.get('headlines', [])
         final_state = engine.get_state(headlines=raw_headlines)
 
@@ -224,8 +226,10 @@ def battle():
             except Exception:
                 pass
 
+        temperature = float(data.get('temperature', 1.0))
+        temperature = max(0.1, min(temperature, 2.0))
         engine = ForesightEngine(futures=futures)
-        result = engine.battle(arg_a, arg_b, rounds=rounds, field_context=field_topics)
+        result = engine.battle(arg_a, arg_b, rounds=rounds, field_context=field_topics, temperature=temperature)
 
         result['field_context'] = {
             'hot_topics': field_context_data.get('hot_topics', []),
