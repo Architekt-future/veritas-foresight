@@ -185,6 +185,61 @@ def simulate():
         return jsonify({'error': str(e), 'status': 'error'}), 500
 
 
+# ── Battle mode ───────────────────────────────────────────────────────────────
+
+@app.route('/api/battle', methods=['POST'])
+def battle():
+    """
+    Battle mode: two opposing arguments compete.
+    Body: { argument_a, argument_b, rounds(1-10), use_field }
+    """
+    try:
+        data = request.get_json(force=True) or {}
+        arg_a = data.get('argument_a', '').strip()
+        arg_b = data.get('argument_b', '').strip()
+
+        if not arg_a or not arg_b:
+            return jsonify({'error': 'argument_a and argument_b are required'}), 400
+
+        rounds = max(1, min(int(data.get('rounds', 5)), 10))
+        use_field = data.get('use_field', True)
+
+        rows = get_active_futures()
+        if not rows:
+            return jsonify({'error': 'no active futures'}), 400
+
+        futures = [Future(
+            name=r['name'],
+            keywords=r['keywords'],
+            core_logic=r['core_logic'],
+            description=r.get('description', ''),
+        ) for r in rows]
+
+        field_context_data = {}
+        field_topics = []
+        if use_field:
+            try:
+                field_context_data = get_field_context(max_feeds=3)
+                field_topics = get_topics_for_engine(field_context_data)
+            except Exception:
+                pass
+
+        engine = ForesightEngine(futures=futures)
+        result = engine.battle(arg_a, arg_b, rounds=rounds, field_context=field_topics)
+
+        result['field_context'] = {
+            'hot_topics': field_context_data.get('hot_topics', []),
+            'crisis_level': field_context_data.get('crisis_level', 0),
+            'headlines': field_context_data.get('headlines', [])[:10],
+            'status': field_context_data.get('status', 'not_fetched'),
+        }
+        result['status'] = 'ok'
+        return jsonify(result)
+
+    except Exception as e:
+        return jsonify({'error': str(e), 'status': 'error'}), 500
+
+
 # ── Frontend ───────────────────────────────────────────────────────────────────
 
 @app.route('/')
