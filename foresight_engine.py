@@ -260,6 +260,75 @@ class ForesightEngine:
             results.append(self.step(arg, field_context))
         return results
 
+    def battle(self, argument_a: str, argument_b: str,
+               rounds: int = 5,
+               field_context: List[str] = None) -> Dict:
+        """
+        Battle mode: two opposing arguments compete for the probability field.
+        Each round both arguments are applied alternately.
+        Returns evolution of the field and a winner.
+        """
+        field_context = field_context or []
+        self.reset()
+
+        history = []
+        labels = []
+
+        for r in range(1, rounds + 1):
+            # Round: A fires, then B fires
+            self.apply_argument(argument_a, field_context, noise=0.05)
+            snap_a = {
+                'round': r,
+                'fired': 'A',
+                'argument': argument_a,
+                'probs': {f.name: round(f.probability * 100, 1) for f in self.futures},
+            }
+
+            self.apply_argument(argument_b, field_context, noise=0.05)
+            snap_b = {
+                'round': r,
+                'fired': 'B',
+                'argument': argument_b,
+                'probs': {f.name: round(f.probability * 100, 1) for f in self.futures},
+            }
+
+            history.append(snap_a)
+            history.append(snap_b)
+            labels.append(f'{r}A')
+            labels.append(f'{r}B')
+
+        # Build chart data from battle history
+        future_names = [f.name for f in self.futures]
+        chart_series = {}
+        for name in future_names:
+            chart_series[name] = [snap['probs'].get(name, 0) for snap in history]
+
+        final_state = self.get_state()
+        dominant = final_state['dominant']
+        entropy = final_state['entropy']
+
+        # Determine winner — which argument resonates more with dominant future
+        dom_future = next((f for f in self.futures if f.name == dominant), None)
+        res_a = self.calculate_resonance(dom_future, argument_a, field_context) if dom_future else 1.0
+        res_b = self.calculate_resonance(dom_future, argument_b, field_context) if dom_future else 1.0
+        winner = 'A' if res_a >= res_b else 'B'
+
+        return {
+            'argument_a': argument_a,
+            'argument_b': argument_b,
+            'rounds': rounds,
+            'history': history,
+            'chart_data': {
+                'labels': labels,
+                'series': chart_series,
+            },
+            'final_state': final_state,
+            'winner': winner,
+            'winner_argument': argument_a if winner == 'A' else argument_b,
+            'dominant_future': dominant,
+            'entropy': entropy,
+        }
+
     def reset(self):
         """Reset probabilities to equal distribution."""
         for f in self.futures:
