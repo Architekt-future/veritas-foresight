@@ -1108,6 +1108,14 @@ input[type=range].temp-range::-webkit-slider-thumb {
                 <div class="toggle-track"><div class="toggle-thumb"></div></div>
                 live field
             </label>
+            <button class="btn-clear" onclick="clearBattleResults()" style="
+                padding:8px 16px;background:transparent;border:1px solid var(--dim);
+                color:var(--muted);font-family:var(--mono);font-size:12px;
+                letter-spacing:0.1em;cursor:pointer;transition:all 0.2s;
+            " onmouseover="this.style.borderColor='var(--danger)';this.style.color='var(--danger)'"
+               onmouseout="this.style.borderColor='var(--dim)';this.style.color='var(--muted)'">
+                ✕ очистити
+            </button>
             <button class="btn-battle" id="btnBattle" onclick="runBattle()">
                 ⚔ битися
             </button>
@@ -1212,6 +1220,14 @@ input[type=range].temp-range::-webkit-slider-thumb {
                 live field
             </label>
 
+            <button class="btn-clear" id="btnClear" onclick="clearResults()" style="
+                padding:8px 16px;background:transparent;border:1px solid var(--dim);
+                color:var(--muted);font-family:var(--mono);font-size:12px;
+                letter-spacing:0.1em;cursor:pointer;transition:all 0.2s;
+            " onmouseover="this.style.borderColor='var(--danger)';this.style.color='var(--danger)'"
+               onmouseout="this.style.borderColor='var(--dim)';this.style.color='var(--muted)'">
+                ✕ очистити
+            </button>
             <button class="btn-run" id="btnRun" onclick="runSimulation()">
                 ▶ simulate
             </button>
@@ -1979,6 +1995,25 @@ document.addEventListener('DOMContentLoaded', () => {
     updateTemp(1.0);
     updateBattleTemp(1.0);
 });
+
+
+// ── Clear results ──────────────────────────────────────────────────────────────
+function clearResults() {
+    document.getElementById('results').classList.remove('show');
+    document.getElementById('argumentInput').value = '';
+    hideError();
+    window._lastChartData = null;
+    hiddenSeries = new Set();
+}
+
+function clearBattleResults() {
+    document.getElementById('battleResults').style.display = 'none';
+    document.getElementById('argA').value = '';
+    document.getElementById('argB').value = '';
+    hideBattleError();
+    window._lastBattleChartData = null;
+    hiddenBattleSeries = new Set();
+}
 
 </script>
 </body>
