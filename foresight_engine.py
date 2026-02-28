@@ -120,7 +120,8 @@ class ForesightEngine:
             f.probability /= total
 
     def calculate_resonance(self, future: Future, argument: str,
-                             field_context: List[str] = None) -> float:
+                             field_context: List[str] = None,
+                             headlines: List[str] = None) -> float:
         """
         How strongly does this argument resonate with this future?
 
@@ -151,6 +152,23 @@ class ForesightEngine:
             return 0.2  # strong suppression
 
         return min(base_resonance * field_boost, 3.5)  # cap at 3.5x
+
+    def match_headlines(self, future: Future, headlines: List[str]) -> List[str]:
+        """
+        Find headlines from RSS that resonate with this future.
+        Returns list of matching headlines (max 3).
+        """
+        if not headlines:
+            return []
+        matched = []
+        for h in headlines:
+            h_lower = h.lower()
+            hits = sum(1 for kw in future.keywords if kw.lower() in h_lower)
+            if hits >= 1:
+                matched.append((hits, h))
+        # Sort by hit count, return top 3
+        matched.sort(reverse=True)
+        return [h for _, h in matched[:3]]
 
     def apply_argument(self, argument: str, field_context: List[str] = None,
                        noise: float = 0.05):
@@ -250,7 +268,7 @@ class ForesightEngine:
         self.history = []
         self.iteration = 0
 
-    def get_state(self) -> Dict:
+    def get_state(self, headlines: List[str] = None) -> Dict:
         """Current state of the probability field."""
         return {
             'iteration': self.iteration,
@@ -261,6 +279,7 @@ class ForesightEngine:
                     'probability_pct': round(f.probability * 100, 1),
                     'description': f.description,
                     'core_logic': f.core_logic,
+                    'matched_headlines': self.match_headlines(f, headlines or []),
                 }
                 for f in sorted(self.futures, key=lambda x: x.probability, reverse=True)
             ],
