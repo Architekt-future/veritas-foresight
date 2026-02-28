@@ -494,6 +494,186 @@ input[type=range]::-webkit-slider-thumb {
 }
 .footer a { color: var(--dim); text-decoration: none; }
 .footer a:hover { color: var(--muted); }
+
+/* ── Futures management ── */
+.futures-mgmt {
+    margin-bottom: 28px;
+}
+
+.futures-mgmt-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.futures-mgmt-title {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.btn-add-future {
+    padding: 4px 12px;
+    background: transparent;
+    border: 1px solid var(--dim);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-add-future:hover { border-color: var(--accent); color: var(--accent); }
+
+.futures-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.future-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    transition: border-color 0.2s;
+}
+.future-item:hover { border-color: var(--dim); }
+.future-item.inactive { opacity: 0.4; }
+
+.future-item-name {
+    flex: 1;
+    font-size: 12px;
+    color: var(--text);
+}
+
+.future-item-desc {
+    font-size: 10px;
+    color: var(--muted);
+    flex: 2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.future-item-badge {
+    font-size: 9px;
+    padding: 1px 6px;
+    border: 1px solid var(--dim);
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    flex-shrink: 0;
+}
+.future-item-badge.custom { border-color: var(--gold); color: var(--gold); }
+
+.future-item-toggle {
+    cursor: pointer;
+    font-size: 11px;
+    color: var(--muted);
+    flex-shrink: 0;
+    padding: 2px 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    font-family: var(--mono);
+    transition: all 0.2s;
+}
+.future-item-toggle:hover { border-color: var(--dim); }
+.future-item.inactive .future-item-toggle { color: var(--green); }
+
+.future-item-del {
+    cursor: pointer;
+    color: var(--danger);
+    font-size: 11px;
+    flex-shrink: 0;
+    padding: 2px 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    font-family: var(--mono);
+    opacity: 0.5;
+    transition: opacity 0.2s;
+}
+.future-item-del:hover { opacity: 1; }
+
+/* ── Add future form ── */
+.add-form {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 16px;
+    margin-top: 10px;
+    flex-direction: column;
+    gap: 10px;
+}
+.add-form.show { display: flex; }
+
+.form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.form-label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.form-input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 7px 10px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+.form-input:focus { border-color: var(--dim); }
+.form-input::placeholder { color: var(--muted); }
+
+.form-hint {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 2px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 4px;
+}
+
+.btn-save {
+    padding: 6px 20px;
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-save:hover { background: var(--accent); color: var(--bg); }
+
+.btn-cancel {
+    padding: 6px 14px;
+    background: transparent;
+    border: 1px solid var(--dim);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-cancel:hover { border-color: var(--muted); color: var(--text); }
+
 </style>
 </head>
 <body>
@@ -515,6 +695,41 @@ input[type=range]::-webkit-slider-thumb {
         <div class="field-dot" id="fieldDot"></div>
         <div class="field-topics" id="fieldTopics">loading information field...</div>
         <div class="field-crisis" id="fieldCrisis"></div>
+    </div>
+
+
+    <!-- FUTURES MANAGEMENT -->
+    <div class="futures-mgmt">
+        <div class="futures-mgmt-header">
+            <span class="futures-mgmt-title">сценарії майбутнього</span>
+            <button class="btn-add-future" onclick="toggleAddForm()">+ додати</button>
+        </div>
+        <div class="futures-list" id="futuresList">
+            <div style="color:var(--muted);font-size:11px;padding:8px 0;">завантаження...</div>
+        </div>
+        <div class="add-form" id="addForm">
+            <div class="form-row">
+                <label class="form-label">назва</label>
+                <input class="form-input" id="newName" placeholder="Ukraine-Victory" maxlength="40">
+            </div>
+            <div class="form-row">
+                <label class="form-label">ключові слова</label>
+                <input class="form-input" id="newKeywords" placeholder="victory, peace, rebuild, ukraine, ceasefire">
+                <span class="form-hint">через кому, англійською</span>
+            </div>
+            <div class="form-row">
+                <label class="form-label">логіка сценарію</label>
+                <input class="form-input" id="newLogic" placeholder="Ukraine wins and rebuilds as democratic state">
+            </div>
+            <div class="form-row">
+                <label class="form-label">опис (необов'язково)</label>
+                <input class="form-input" id="newDesc" placeholder="Short description for display">
+            </div>
+            <div class="form-actions">
+                <button class="btn-cancel" onclick="toggleAddForm()">скасувати</button>
+                <button class="btn-save" onclick="saveFuture()">зберегти</button>
+            </div>
+        </div>
     </div>
 
     <div class="input-section">
@@ -747,6 +962,114 @@ document.getElementById('argumentInput').addEventListener('keydown', e => {
 
 // Load field on start
 loadField();
+loadFutures();
+
+// ── Futures management ─────────────────────────────────────────────────────────
+let allFutures = [];
+
+async function loadFutures() {
+    try {
+        const r = await fetch(`${API}/api/futures`);
+        const d = await r.json();
+        allFutures = d.futures || [];
+        renderFuturesList();
+    } catch {
+        document.getElementById('futuresList').innerHTML =
+            '<div style="color:var(--muted);font-size:11px;">не вдалось завантажити</div>';
+    }
+}
+
+function renderFuturesList() {
+    const el = document.getElementById('futuresList');
+    if (!allFutures.length) {
+        el.innerHTML = '<div style="color:var(--muted);font-size:11px;">немає сценаріїв</div>';
+        return;
+    }
+    el.innerHTML = allFutures.map(f => `
+        <div class="future-item ${f.is_active ? '' : 'inactive'}" id="fi-${f.id}">
+            <div class="future-item-name">${esc(f.name)}</div>
+            <div class="future-item-desc">${esc(f.description || f.core_logic)}</div>
+            <span class="future-item-badge ${f.is_default ? '' : 'custom'}">
+                ${f.is_default ? 'default' : 'custom'}
+            </span>
+            <button class="future-item-toggle"
+                onclick="toggleFuture('${f.id}', ${!f.is_active})">
+                ${f.is_active ? 'вимк' : 'увімк'}
+            </button>
+            ${!f.is_default ? `<button class="future-item-del"
+                onclick="deleteFuture('${f.id}')">✕</button>` : ''}
+        </div>
+    `).join('');
+}
+
+async function toggleFuture(id, isActive) {
+    try {
+        await fetch(`${API}/api/futures/${id}/toggle`, {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({is_active: isActive}),
+        });
+        await loadFutures();
+    } catch(e) {
+        showError('Не вдалось змінити статус: ' + e.message);
+    }
+}
+
+async function deleteFuture(id) {
+    if (!confirm('Видалити цей сценарій?')) return;
+    try {
+        await fetch(`${API}/api/futures/${id}`, {method: 'DELETE'});
+        await loadFutures();
+    } catch(e) {
+        showError('Не вдалось видалити: ' + e.message);
+    }
+}
+
+function toggleAddForm() {
+    const form = document.getElementById('addForm');
+    form.classList.toggle('show');
+    if (form.classList.contains('show')) {
+        document.getElementById('newName').focus();
+    }
+}
+
+async function saveFuture() {
+    const name = document.getElementById('newName').value.trim();
+    const keywords = document.getElementById('newKeywords').value.trim();
+    const logic = document.getElementById('newLogic').value.trim();
+    const desc = document.getElementById('newDesc').value.trim();
+
+    if (!name || !keywords || !logic) {
+        showError('Назва, ключові слова і логіка — обов\'язкові поля');
+        return;
+    }
+
+    try {
+        const resp = await fetch(`${API}/api/futures`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                name,
+                keywords: keywords.split(',').map(k => k.trim()).filter(Boolean),
+                core_logic: logic,
+                description: desc,
+            }),
+        });
+        if (!resp.ok) {
+            const err = await resp.json();
+            throw new Error(err.error || 'помилка збереження');
+        }
+        // Clear form
+        ['newName','newKeywords','newLogic','newDesc'].forEach(id => {
+            document.getElementById(id).value = '';
+        });
+        document.getElementById('addForm').classList.remove('show');
+        await loadFutures();
+    } catch(e) {
+        showError('Не вдалось зберегти: ' + e.message);
+    }
+}
+
 </script>
 </body>
 </html>
