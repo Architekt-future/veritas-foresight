@@ -792,6 +792,171 @@ canvas#probabilityChart {
     flex-shrink: 0;
 }
 
+
+/* ── Battle mode ── */
+.mode-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 24px;
+    border: 1px solid var(--border);
+}
+
+.mode-tab {
+    flex: 1;
+    padding: 10px;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: var(--surface);
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-right: 1px solid var(--border);
+}
+.mode-tab:last-child { border-right: none; }
+.mode-tab.active { background: var(--bg); color: var(--accent); border-bottom: 2px solid var(--accent); }
+.mode-tab:hover:not(.active) { color: var(--text); }
+
+.battle-section { display: none; }
+.battle-section.show { display: block; }
+.simulate-section { display: block; }
+.simulate-section.hide { display: none; }
+
+.battle-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.battle-col {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.battle-label {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    border-left: 3px solid;
+}
+.battle-label.a { border-color: var(--accent); color: var(--accent); }
+.battle-label.b { border-color: var(--gold); color: var(--gold); }
+
+.battle-textarea {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 10px 12px;
+    resize: vertical;
+    min-height: 70px;
+    line-height: 1.5;
+    outline: none;
+    transition: border-color 0.2s;
+}
+.battle-textarea:focus { border-color: var(--dim); }
+.battle-textarea::placeholder { color: var(--muted); }
+
+.battle-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.btn-battle {
+    margin-left: auto;
+    padding: 8px 28px;
+    background: transparent;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-battle:hover { background: var(--gold); color: var(--bg); }
+.btn-battle:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* Battle results */
+.battle-verdict {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px;
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+.battle-winner-label {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+}
+
+.battle-winner-arg {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 20px;
+    margin-bottom: 6px;
+}
+.battle-winner-arg.a { color: var(--accent); }
+.battle-winner-arg.b { color: var(--gold); }
+
+.battle-winner-sub {
+    font-size: 11px;
+    color: var(--muted);
+}
+
+.battle-vs {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+    align-items: center;
+}
+
+.battle-side {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 14px;
+}
+.battle-side.winner { border-color: var(--green); }
+
+.battle-side-label {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+.battle-side-label.a { color: var(--accent); }
+.battle-side-label.b { color: var(--gold); }
+
+.battle-side-text {
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.4;
+}
+
+.battle-vs-divider {
+    font-family: var(--serif);
+    font-size: 28px;
+    color: var(--muted);
+    font-style: italic;
+    text-align: center;
+}
+
 </style>
 </head>
 <body>
@@ -815,6 +980,73 @@ canvas#probabilityChart {
         <div class="field-crisis" id="fieldCrisis"></div>
     </div>
 
+
+    <!-- MODE TABS -->
+    <div class="mode-tabs">
+        <button class="mode-tab active" id="tabSimulate"
+            onclick="switchMode('simulate')">▶ симуляція</button>
+        <button class="mode-tab" id="tabBattle"
+            onclick="switchMode('battle')">⚔ битва аргументів</button>
+    </div>
+
+    <!-- BATTLE SECTION -->
+    <div class="battle-section" id="battleSection">
+
+        <div class="battle-inputs">
+            <div class="battle-col">
+                <div class="battle-label a">аргумент A</div>
+                <textarea class="battle-textarea" id="argA"
+                    placeholder="AI regulation will strengthen and slow down tech acceleration"></textarea>
+            </div>
+            <div class="battle-col">
+                <div class="battle-label b">аргумент B</div>
+                <textarea class="battle-textarea" id="argB"
+                    placeholder="AI will advance faster than any regulation can control"></textarea>
+            </div>
+        </div>
+
+        <div class="battle-controls">
+            <div class="ctrl-group">
+                <label>раунди</label>
+                <input type="range" id="battleRounds" min="1" max="10" value="5"
+                    oninput="document.getElementById('battleRoundsVal').textContent=this.value">
+                <span class="steps-val" id="battleRoundsVal">5</span>
+            </div>
+            <label class="toggle">
+                <input type="checkbox" id="battleUseField" checked>
+                <div class="toggle-track"><div class="toggle-thumb"></div></div>
+                live field
+            </label>
+            <button class="btn-battle" id="btnBattle" onclick="runBattle()">
+                ⚔ битися
+            </button>
+        </div>
+
+        <div class="error-msg" id="battleError"></div>
+        <div class="loading" id="battleLoading">
+            <div class="loading-spinner"></div>
+            <div>аргументи б'ються...</div>
+        </div>
+
+        <div id="battleResults" style="display:none">
+            <div class="battle-verdict" id="battleVerdict"></div>
+            <div class="battle-vs" id="battleVs"></div>
+            <div class="chart-panel">
+                <div class="chart-header">
+                    <span>еволюція поля · раунди A/B</span>
+                    <span id="battleChartInfo" style="color:var(--accent)"></span>
+                </div>
+                <div class="chart-wrap">
+                    <canvas id="battleChart" height="220"></canvas>
+                </div>
+                <div class="chart-legend" id="battleLegend"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SIMULATE SECTION (original content wrapped) -->
+    <div class="simulate-section" id="simulateSection">
 
     <!-- FUTURES MANAGEMENT -->
     <div class="futures-mgmt">
@@ -932,6 +1164,8 @@ canvas#probabilityChart {
         <div class="history-list" id="historyList"></div>
 
     </div>
+
+    </div><!-- /simulate-section -->
 
     <div class="footer">
         <div>Veritas Foresight v1.0 · does not predict · measures resonance</div>
@@ -1353,6 +1587,222 @@ function toggleChartSeries(name) {
         hiddenSeries.add(name);
     }
     if (window._lastChartData) renderChart(window._lastChartData);
+}
+
+
+
+// ── Mode switching ─────────────────────────────────────────────────────────────
+function switchMode(mode) {
+    const isBattle = mode === 'battle';
+    document.getElementById('tabSimulate').classList.toggle('active', !isBattle);
+    document.getElementById('tabBattle').classList.toggle('active', isBattle);
+    document.getElementById('simulateSection').classList.toggle('hide', isBattle);
+    document.getElementById('battleSection').classList.toggle('show', isBattle);
+}
+
+// ── Battle ─────────────────────────────────────────────────────────────────────
+let hiddenBattleSeries = new Set();
+
+async function runBattle() {
+    const argA = document.getElementById('argA').value.trim();
+    const argB = document.getElementById('argB').value.trim();
+    if (!argA || !argB) {
+        showBattleError('Введіть обидва аргументи');
+        return;
+    }
+
+    const rounds = parseInt(document.getElementById('battleRounds').value);
+    const useField = document.getElementById('battleUseField').checked;
+
+    setBattleLoading(true);
+    hideBattleError();
+    document.getElementById('battleResults').style.display = 'none';
+
+    try {
+        const resp = await fetch(`${API}/api/battle`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                argument_a: argA,
+                argument_b: argB,
+                rounds,
+                use_field: useField,
+            }),
+        });
+        if (!resp.ok) {
+            const err = await resp.json();
+            throw new Error(err.error || `HTTP ${resp.status}`);
+        }
+        const data = await resp.json();
+        renderBattleResults(data);
+    } catch(e) {
+        showBattleError(e.message);
+    } finally {
+        setBattleLoading(false);
+    }
+}
+
+function renderBattleResults(data) {
+    const winner = data.winner;
+    const winnerArg = data.winner_argument;
+    const dominant = data.dominant_future;
+
+    // Verdict
+    const verdict = document.getElementById('battleVerdict');
+    verdict.innerHTML = `
+        <div class="battle-winner-label">переможець · домінантне майбутнє: ${esc(dominant)}</div>
+        <div class="battle-winner-arg ${winner.toLowerCase()}">${esc(winnerArg)}</div>
+        <div class="battle-winner-sub">аргумент ${winner} резонує сильніше з полем</div>
+    `;
+
+    // VS display
+    const vs = document.getElementById('battleVs');
+    const argA = document.getElementById('argA').value.trim();
+    const argB = document.getElementById('argB').value.trim();
+    vs.innerHTML = `
+        <div class="battle-side ${winner === 'A' ? 'winner' : ''}">
+            <div class="battle-side-label a">A ${winner === 'A' ? '🏆' : ''}</div>
+            <div class="battle-side-text">${esc(argA)}</div>
+        </div>
+        <div class="battle-vs-divider">vs</div>
+        <div class="battle-side ${winner === 'B' ? 'winner' : ''}">
+            <div class="battle-side-label b">B ${winner === 'B' ? '🏆' : ''}</div>
+            <div class="battle-side-text">${esc(argB)}</div>
+        </div>
+    `;
+
+    // Chart
+    if (data.chart_data) {
+        window._lastBattleChartData = data.chart_data;
+        hiddenBattleSeries = new Set();
+        renderBattleChart(data.chart_data);
+    }
+
+    document.getElementById('battleResults').style.display = 'block';
+}
+
+function renderBattleChart(chartData) {
+    const canvas = document.getElementById('battleChart');
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    const W = rect.width - 32;
+    const H = 220;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.scale(dpr, dpr);
+
+    const labels = chartData.labels;
+    const series = chartData.series;
+    const names = Object.keys(series);
+    const PAD = { top: 16, right: 16, bottom: 32, left: 42 };
+    const cW = W - PAD.left - PAD.right;
+    const cH = H - PAD.top - PAD.bottom;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Grid
+    ctx.strokeStyle = 'rgba(37,45,61,0.8)';
+    ctx.lineWidth = 1;
+    [0, 25, 50, 75, 100].forEach(v => {
+        const y = PAD.top + cH - (v / 100) * cH;
+        ctx.beginPath();
+        ctx.moveTo(PAD.left, y);
+        ctx.lineTo(PAD.left + cW, y);
+        ctx.stroke();
+        ctx.fillStyle = '#8896b0';
+        ctx.font = '9px Share Tech Mono, monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText(v + '%', PAD.left - 6, y + 3);
+    });
+
+    // X labels — show every other to avoid crowding
+    ctx.fillStyle = '#8896b0';
+    ctx.font = '9px Share Tech Mono, monospace';
+    ctx.textAlign = 'center';
+    labels.forEach((l, i) => {
+        if (i % 2 === 0) {
+            const x = PAD.left + (i / Math.max(labels.length - 1, 1)) * cW;
+            ctx.fillText(l, x, H - PAD.bottom + 14);
+        }
+    });
+
+    // Vertical dividers between rounds (between A and B)
+    ctx.strokeStyle = 'rgba(58,69,96,0.4)';
+    ctx.lineWidth = 0.5;
+    labels.forEach((l, i) => {
+        if (l.endsWith('B') && i < labels.length - 1) {
+            const x = PAD.left + ((i + 0.5) / Math.max(labels.length - 1, 1)) * cW;
+            ctx.beginPath();
+            ctx.moveTo(x, PAD.top);
+            ctx.lineTo(x, PAD.top + cH);
+            ctx.stroke();
+        }
+    });
+
+    // Lines
+    names.forEach((name, ni) => {
+        if (hiddenBattleSeries.has(name)) return;
+        const vals = series[name];
+        const color = CHART_COLORS[ni % CHART_COLORS.length];
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.lineJoin = 'round';
+        vals.forEach((v, i) => {
+            const x = PAD.left + (i / Math.max(labels.length - 1, 1)) * cW;
+            const y = PAD.top + cH - (v / 100) * cH;
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+        vals.forEach((v, i) => {
+            const x = PAD.left + (i / Math.max(labels.length - 1, 1)) * cW;
+            const y = PAD.top + cH - (v / 100) * cH;
+            ctx.beginPath();
+            ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+        });
+    });
+
+    // Legend
+    const legend = document.getElementById('battleLegend');
+    legend.innerHTML = names.map((name, ni) => {
+        const color = CHART_COLORS[ni % CHART_COLORS.length];
+        const hidden = hiddenBattleSeries.has(name);
+        return `<div class="legend-item" onclick="toggleBattleSeries('${name}')"
+                     style="${hidden ? 'opacity:0.35' : ''}">
+            <div class="legend-dot" style="background:${color}"></div>
+            <span>${esc(name)}</span>
+        </div>`;
+    }).join('');
+
+    document.getElementById('battleChartInfo').textContent =
+        `${labels.length / 2} раундів · ${labels.length} точок`;
+}
+
+function toggleBattleSeries(name) {
+    hiddenBattleSeries.has(name)
+        ? hiddenBattleSeries.delete(name)
+        : hiddenBattleSeries.add(name);
+    if (window._lastBattleChartData) renderBattleChart(window._lastBattleChartData);
+}
+
+function setBattleLoading(on) {
+    document.getElementById('battleLoading').classList.toggle('show', on);
+    document.getElementById('btnBattle').disabled = on;
+}
+
+function showBattleError(msg) {
+    const el = document.getElementById('battleError');
+    el.textContent = '⚠ ' + msg;
+    el.classList.add('show');
+}
+
+function hideBattleError() {
+    document.getElementById('battleError').classList.remove('show');
 }
 
 </script>
