@@ -171,15 +171,27 @@ class ForesightEngine:
         return [h for _, h in matched[:3]]
 
     def apply_argument(self, argument: str, field_context: List[str] = None,
-                       noise: float = 0.05):
+                       noise: float = 0.05, temperature: float = 1.0):
         """
         Apply an argument to the probability field.
         noise = randomness in resonance (imperfect influence)
+        temperature = 0.0 pure determinism, 1.0 normal, 2.0 chaos
+          - low temp: strong arguments dominate absolutely
+          - high temp: weak arguments get random boosts, outcomes unpredictable
         """
         for f in self.futures:
             r = self.calculate_resonance(f, argument, field_context)
-            n = 1.0 + random.uniform(-noise, noise)
-            f.probability *= r * n
+            # Temperature modifies noise and flattens/sharpens resonance
+            effective_noise = noise * temperature
+            # At high temp, resonance is flattened toward 1.0 (random wins)
+            # At low temp, resonance is sharpened (strong signal wins absolutely)
+            if temperature < 1.0:
+                r = 1.0 + (r - 1.0) * (1.0 / max(temperature, 0.1))
+                r = min(r, 5.0)
+            elif temperature > 1.0:
+                r = 1.0 + (r - 1.0) / temperature
+            n = 1.0 + random.uniform(-effective_noise, effective_noise)
+            f.probability *= max(r * n, 0.01)
         self._normalize()
 
     def collapse(self) -> Future:
@@ -207,7 +219,8 @@ class ForesightEngine:
         ]
         return random.choice(templates)
 
-    def step(self, argument: str = None, field_context: List[str] = None) -> ResonanceSnapshot:
+    def step(self, argument: str = None, field_context: List[str] = None,
+             temperature: float = 1.0) -> ResonanceSnapshot:
         """
         One full iteration:
             1. Apply external argument (if any)
@@ -216,13 +229,14 @@ class ForesightEngine:
             4. Generate feedback
             5. Apply feedback (self-reinforcement)
             6. Record result
+        temperature: 0.0=deterministic, 1.0=normal, 2.0=chaotic
         """
         self.iteration += 1
         field_context = field_context or []
 
         # Apply external argument
         if argument:
-            self.apply_argument(argument, field_context, noise=0.05)
+            self.apply_argument(argument, field_context, noise=0.05, temperature=temperature)
 
         probs_before = {f.name: round(f.probability, 4) for f in self.futures}
 
@@ -231,7 +245,7 @@ class ForesightEngine:
 
         # Generate and apply feedback
         feedback = self.generate_feedback(realized)
-        self.apply_argument(feedback, field_context, noise=0.08)
+        self.apply_argument(feedback, field_context, noise=0.08, temperature=temperature)
 
         probs_after = {f.name: round(f.probability, 4) for f in self.futures}
 
@@ -249,20 +263,23 @@ class ForesightEngine:
         return snapshot
 
     def run(self, argument: str, steps: int = 5,
-            field_context: List[str] = None) -> List[ResonanceSnapshot]:
+            field_context: List[str] = None,
+            temperature: float = 1.0) -> List[ResonanceSnapshot]:
         """
         Run multiple iterations with one initial argument.
         After step 1, only feedback drives the system.
+        temperature: 0.0=deterministic, 1.0=normal, 2.0=chaotic
         """
         results = []
         for i in range(steps):
             arg = argument if i == 0 else None
-            results.append(self.step(arg, field_context))
+            results.append(self.step(arg, field_context, temperature=temperature))
         return results
 
     def battle(self, argument_a: str, argument_b: str,
                rounds: int = 5,
-               field_context: List[str] = None) -> Dict:
+               field_context: List[str] = None,
+               temperature: float = 1.0) -> Dict:
         """
         Battle mode: two opposing arguments compete for the probability field.
         Each round both arguments are applied alternately.
@@ -276,7 +293,7 @@ class ForesightEngine:
 
         for r in range(1, rounds + 1):
             # Round: A fires, then B fires
-            self.apply_argument(argument_a, field_context, noise=0.05)
+            self.apply_argument(argument_a, field_context, noise=0.05, temperature=temperature)
             snap_a = {
                 'round': r,
                 'fired': 'A',
@@ -284,7 +301,7 @@ class ForesightEngine:
                 'probs': {f.name: round(f.probability * 100, 1) for f in self.futures},
             }
 
-            self.apply_argument(argument_b, field_context, noise=0.05)
+            self.apply_argument(argument_b, field_context, noise=0.05, temperature=temperature)
             snap_b = {
                 'round': r,
                 'fired': 'B',
