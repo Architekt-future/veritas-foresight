@@ -674,6 +674,68 @@ input[type=range]::-webkit-slider-thumb {
 }
 .btn-cancel:hover { border-color: var(--muted); color: var(--text); }
 
+
+/* ── Matched headlines ── */
+.future-headlines {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-top: 4px;
+    padding-left: 4px;
+    border-left: 2px solid var(--border);
+}
+
+.headline-item {
+    font-size: 10px;
+    color: var(--muted);
+    line-height: 1.4;
+    display: flex;
+    gap: 6px;
+    align-items: flex-start;
+}
+
+.headline-item::before {
+    content: '↑';
+    color: var(--green);
+    flex-shrink: 0;
+    font-size: 10px;
+}
+
+/* ── RSS headlines panel ── */
+.rss-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 14px 16px;
+    margin-bottom: 24px;
+}
+
+.rss-panel-title {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rss-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.rss-item {
+    font-size: 11px;
+    color: var(--text);
+    line-height: 1.4;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+}
+.rss-item:last-child { border-bottom: none; }
+
 </style>
 </head>
 <body>
@@ -790,6 +852,14 @@ input[type=range]::-webkit-slider-thumb {
             </div>
         </div>
 
+        <div class="rss-panel" id="rssPanel" style="display:none">
+            <div class="rss-panel-title">
+                <span>📡</span>
+                <span>поточні заголовки що вплинули на резонанс</span>
+            </div>
+            <div class="rss-list" id="rssList"></div>
+        </div>
+
         <div class="history-title">iteration log</div>
         <div class="history-list" id="historyList"></div>
 
@@ -890,16 +960,33 @@ function renderResults(data) {
     state.futures.forEach(f => {
         const isDom = f.name === state.dominant;
         const pct = (f.probability * 100).toFixed(1);
+        const headlines = f.matched_headlines || [];
+        const headlinesHtml = headlines.length
+            ? `<div class="future-headlines">
+                ${headlines.map(h => `<div class="headline-item">${esc(h)}</div>`).join('')}
+               </div>`
+            : '';
         grid.innerHTML += `
-            <div class="future-row">
-                <div class="future-name" title="${f.core_logic}">${f.name}</div>
+            <div class="future-row" style="flex-wrap:wrap">
+                <div class="future-name" title="${esc(f.core_logic)}">${esc(f.name)}</div>
                 <div class="future-bar-wrap">
                     <div class="future-bar ${isDom ? 'dominant' : ''}"
                          style="width:${pct}%"></div>
                 </div>
                 <div class="future-pct ${isDom ? 'dominant' : ''}">${pct}%</div>
+                ${headlinesHtml}
             </div>`;
     });
+
+    // RSS headlines panel
+    const rssPanel = document.getElementById('rssPanel');
+    const rssList = document.getElementById('rssList');
+    if (fc && fc.headlines && fc.headlines.length) {
+        rssPanel.style.display = 'block';
+        rssList.innerHTML = fc.headlines.map(h =>
+            `<div class="rss-item">${esc(h)}</div>`
+        ).join('');
+    }
 
     // Field context
     if (fc && fc.hot_topics && fc.hot_topics.length) {
