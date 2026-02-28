@@ -148,9 +148,10 @@ def create_future(name: str, keywords: List[str], core_logic: str,
 
 
 def toggle_future(future_id: str, is_active: bool) -> Dict:
-    """Enable or disable a future scenario."""
+    """Enable or disable a future scenario (both default and custom)."""
     if not is_configured():
         raise Exception('Supabase not configured')
+    # No is_default filter — allow toggling any future
     result = _request('PATCH', f'futures?id=eq.{future_id}', {'is_active': is_active})
     return result[0] if isinstance(result, list) and result else {}
 
