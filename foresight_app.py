@@ -154,7 +154,8 @@ def simulate():
 
         engine = ForesightEngine(futures=futures, seed=seed)
         results = engine.run(argument, steps=steps, field_context=field_topics)
-        final_state = engine.get_state()
+        raw_headlines = field_context_data.get('headlines', [])
+        final_state = engine.get_state(headlines=raw_headlines)
 
         history = [{
             'iteration': s.iteration,
@@ -173,6 +174,7 @@ def simulate():
             'field_context': {
                 'hot_topics': field_context_data.get('hot_topics', []),
                 'crisis_level': field_context_data.get('crisis_level', 0),
+                'headlines': field_context_data.get('headlines', [])[:10],
                 'headlines_count': len(field_context_data.get('headlines', [])),
                 'status': field_context_data.get('status', 'not_fetched'),
             },
