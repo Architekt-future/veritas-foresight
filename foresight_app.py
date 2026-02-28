@@ -1,6 +1,6 @@
 """
-Veritas Foresight — Flask API v1.0
-Narrative resonance simulator as a web service.
+Veritas Foresight — Flask API v1.1
+Narrative resonance simulator with persistent custom futures via Supabase.
 """
 
 from flask import Flask, request, jsonify, send_from_directory
@@ -8,18 +8,39 @@ from flask_cors import CORS
 import os
 from foresight_engine import ForesightEngine, Future
 from foresight_rss import get_field_context, get_topics_for_engine
+from foresight_db import (
+    is_configured, seed_defaults,
+    get_all_futures, get_active_futures,
+    create_future, toggle_future, delete_future,
+)
 
 app = Flask(__name__, static_folder='.')
 CORS(app)
 
+# Seed default futures on startup
+if is_configured():
+    try:
+        seed_defaults()
+    except Exception:
+        pass
+
+
+# ── Health ─────────────────────────────────────────────────────────────────────
+
 @app.route('/api/health')
 def health():
-    return jsonify({'status': 'online', 'service': 'Veritas Foresight', 'version': 'v1.0'})
+    return jsonify({
+        'status': 'online',
+        'service': 'Veritas Foresight',
+        'version': 'v1.1',
+        'storage': 'supabase' if is_configured() else 'memory',
+    })
 
+
+# ── Field context ──────────────────────────────────────────────────────────────
 
 @app.route('/api/field', methods=['GET'])
 def field():
-    """Get current information field context from RSS."""
     try:
         context = get_field_context(max_feeds=3)
         return jsonify(context)
@@ -27,11 +48,77 @@ def field():
         return jsonify({'error': str(e), 'status': 'error'}), 500
 
 
+# ── Futures CRUD ───────────────────────────────────────────────────────────────
+
+@app.route('/api/futures', methods=['GET'])
+def list_futures():
+    """Get all futures with active status."""
+    try:
+        rows = get_all_futures()
+        return jsonify({'futures': rows, 'status': 'ok'})
+    except Exception as e:
+        return jsonify({'error': str(e), 'status': 'error'}), 500
+
+
+@app.route('/api/futures', methods=['POST'])
+def add_future():
+    """
+    Add a custom future scenario.
+    Body: { name, keywords: [str], core_logic, description? }
+    """
+    try:
+        data = request.get_json(force=True) or {}
+        name = data.get('name', '').strip()
+        keywords = data.get('keywords', [])
+        core_logic = data.get('core_logic', '').strip()
+        description = data.get('description', '').strip()
+
+        if isinstance(keywords, str):
+            keywords = [k.strip() for k in keywords.split(',') if k.strip()]
+
+        if not name:
+            return jsonify({'error': 'name is required'}), 400
+        if not keywords:
+            return jsonify({'error': 'keywords are required'}), 400
+        if not core_logic:
+            return jsonify({'error': 'core_logic is required'}), 400
+
+        result = create_future(name, keywords, core_logic, description)
+        return jsonify({'future': result, 'status': 'ok'})
+
+    except Exception as e:
+        return jsonify({'error': str(e), 'status': 'error'}), 500
+
+
+@app.route('/api/futures/<future_id>/toggle', methods=['PATCH'])
+def toggle(future_id):
+    """Enable or disable a future. Body: { is_active: bool }"""
+    try:
+        data = request.get_json(force=True) or {}
+        is_active = bool(data.get('is_active', True))
+        result = toggle_future(future_id, is_active)
+        return jsonify({'future': result, 'status': 'ok'})
+    except Exception as e:
+        return jsonify({'error': str(e), 'status': 'error'}), 500
+
+
+@app.route('/api/futures/<future_id>', methods=['DELETE'])
+def remove_future(future_id):
+    """Delete a custom (non-default) future."""
+    try:
+        delete_future(future_id)
+        return jsonify({'status': 'ok'})
+    except Exception as e:
+        return jsonify({'error': str(e), 'status': 'error'}), 500
+
+
+# ── Simulation ─────────────────────────────────────────────────────────────────
+
 @app.route('/api/simulate', methods=['POST'])
 def simulate():
     """
-    Run a narrative resonance simulation.
-    Body: { argument, steps(1-10), use_field, seed, futures }
+    Run simulation using active futures from DB.
+    Body: { argument, steps(1-10), use_field, seed }
     """
     try:
         data = request.get_json(force=True) or {}
@@ -43,13 +130,19 @@ def simulate():
         use_field = data.get('use_field', True)
         seed = data.get('seed', None)
 
-        futures = None
-        if data.get('futures'):
-            try:
-                futures = [Future(**f) for f in data['futures']]
-            except Exception:
-                pass
+        # Load active futures from DB
+        rows = get_active_futures()
+        if not rows:
+            return jsonify({'error': 'no active futures — enable at least one'}), 400
 
+        futures = [Future(
+            name=r['name'],
+            keywords=r['keywords'],
+            core_logic=r['core_logic'],
+            description=r.get('description', ''),
+        ) for r in rows]
+
+        # Field context
         field_context_data = {}
         field_topics = []
         if use_field:
@@ -90,46 +183,7 @@ def simulate():
         return jsonify({'error': str(e), 'status': 'error'}), 500
 
 
-@app.route('/api/step', methods=['POST'])
-def step():
-    """Single step with client-side state."""
-    try:
-        data = request.get_json(force=True) or {}
-        argument = data.get('argument', '').strip()
-
-        field_topics = []
-        if data.get('use_field', True):
-            try:
-                ctx = get_field_context(max_feeds=2)
-                field_topics = get_topics_for_engine(ctx)
-            except Exception:
-                pass
-
-        engine = ForesightEngine()
-        current_probs = data.get('current_probs', {})
-        if current_probs:
-            for f in engine.futures:
-                if f.name in current_probs:
-                    f.probability = float(current_probs[f.name])
-            engine._normalize()
-
-        snap = engine.step(argument or None, field_topics)
-        state = engine.get_state()
-
-        return jsonify({
-            'iteration': snap.iteration,
-            'argument': snap.argument,
-            'realized': snap.realized_future,
-            'feedback': snap.feedback_argument,
-            'probs_before': snap.probabilities_before,
-            'probs_after': snap.probabilities_after,
-            'state': state,
-            'status': 'ok',
-        })
-
-    except Exception as e:
-        return jsonify({'error': str(e), 'status': 'error'}), 500
-
+# ── Frontend ───────────────────────────────────────────────────────────────────
 
 @app.route('/')
 def index():
