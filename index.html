@@ -957,6 +957,79 @@ canvas#probabilityChart {
     text-align: center;
 }
 
+
+/* ── Temperature control ── */
+.temp-control {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 14px 16px;
+    margin-bottom: 16px;
+}
+
+.temp-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.temp-title {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.temp-value-display {
+    font-size: 12px;
+    font-weight: bold;
+    min-width: 80px;
+    text-align: right;
+    transition: color 0.3s;
+}
+
+.temp-slider-wrap {
+    position: relative;
+    margin-bottom: 8px;
+}
+
+input[type=range].temp-range {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+}
+input[type=range].temp-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.temp-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 10px;
+}
+
+.temp-explanation {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.6;
+    padding: 8px 10px;
+    border-left: 2px solid var(--border);
+    transition: all 0.3s;
+    font-family: var(--serif);
+    font-style: italic;
+}
+
 </style>
 </head>
 <body>
@@ -1002,6 +1075,24 @@ canvas#probabilityChart {
                 <div class="battle-label b">аргумент B</div>
                 <textarea class="battle-textarea" id="argB"
                     placeholder="AI will advance faster than any regulation can control"></textarea>
+            </div>
+        </div>
+
+        <div class="temp-control" style="margin-bottom:12px">
+            <div class="temp-header">
+                <span class="temp-title">🌡 температура</span>
+                <span class="temp-value-display" id="battleTempDisplay">нормальна · 1.0</span>
+            </div>
+            <input type="range" class="temp-range" id="battleTempRange"
+                min="0.1" max="2.0" step="0.1" value="1.0"
+                oninput="updateBattleTemp(this.value)">
+            <div class="temp-labels">
+                <span>детерміновано</span>
+                <span>нормально</span>
+                <span>хаос</span>
+            </div>
+            <div class="temp-explanation" id="battleTempExplanation">
+                Аргументи впливають нормально. Сильний наратив перемагає, але випадковість зберігається — як у реальному житті.
             </div>
         </div>
 
@@ -1087,9 +1178,29 @@ canvas#probabilityChart {
         <textarea id="argumentInput" rows="3"
             placeholder="e.g. — AI regulation will collapse under industry pressure before 2026 ends"></textarea>
 
+        <div class="temp-control">
+            <div class="temp-header">
+                <span class="temp-title">🌡 температура системи</span>
+                <span class="temp-value-display" id="tempDisplay">нормальна · 1.0</span>
+            </div>
+            <div class="temp-slider-wrap">
+                <input type="range" class="temp-range" id="tempRange"
+                    min="0.1" max="2.0" step="0.1" value="1.0"
+                    oninput="updateTemp(this.value)">
+            </div>
+            <div class="temp-labels">
+                <span>детерміновано</span>
+                <span>нормально</span>
+                <span>хаос</span>
+            </div>
+            <div class="temp-explanation" id="tempExplanation">
+                Аргументи впливають нормально. Сильний наратив перемагає, але випадковість зберігається — як у реальному житті.
+            </div>
+        </div>
+
         <div class="controls">
             <div class="ctrl-group">
-                <label>steps</label>
+                <label>кроки</label>
                 <input type="range" id="stepsRange" min="1" max="10" value="5"
                     oninput="document.getElementById('stepsVal').textContent=this.value">
                 <span class="steps-val" id="stepsVal">5</span>
@@ -1221,7 +1332,7 @@ async function runSimulation() {
         const resp = await fetch(`${API}/api/simulate`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ argument, steps, use_field: useField }),
+            body: JSON.stringify({ argument, steps, use_field: useField, temperature: parseFloat(document.getElementById('tempRange').value) }),
         });
 
         if (!resp.ok) {
@@ -1627,6 +1738,7 @@ async function runBattle() {
                 argument_b: argB,
                 rounds,
                 use_field: useField,
+                temperature: parseFloat(document.getElementById('battleTempRange').value),
             }),
         });
         if (!resp.ok) {
@@ -1804,6 +1916,69 @@ function showBattleError(msg) {
 function hideBattleError() {
     document.getElementById('battleError').classList.remove('show');
 }
+
+
+
+// ── Temperature control ────────────────────────────────────────────────────────
+const TEMP_LEVELS = [
+    { max: 0.3, label: 'заморожено · ', color: '#a0c4ff',
+      text: 'Майже повний детермінізм. Найсильніший аргумент перемагає завжди. Випадковості майже немає — як у тоталітарній системі де один голос вирішує все.' },
+    { max: 0.6, label: 'холодна · ', color: '#7ab8f5',
+      text: 'Низька невизначеність. Сильні аргументи домінують надійно. Слабкі — майже не мають шансу. Реальність "слухається" логіки.' },
+    { max: 0.9, label: 'прохолодна · ', color: '#5fb8ff',
+      text: 'Помірна передбачуваність. Сильний аргумент швидше за все переможе, але сюрпризи можливі.' },
+    { max: 1.1, label: 'нормальна · ', color: '#5fb8ff',
+      text: 'Аргументи впливають нормально. Сильний наратив перемагає, але випадковість зберігається — як у реальному житті.' },
+    { max: 1.4, label: 'тепла · ', color: '#e0b84a',
+      text: 'Підвищена невизначеність. Слабкі аргументи отримують випадкові шанси. Результати менш передбачувані — як у нестабільних суспільствах.' },
+    { max: 1.7, label: 'гаряча · ', color: '#fb923c',
+      text: 'Висока турбулентність. Логіка аргументів розмивається. Будь-який сценарій може реалізуватись незалежно від сили наративу.' },
+    { max: 2.1, label: 'хаос · ', color: '#ff6060',
+      text: 'Повний хаос. Аргументи майже не мають значення — реальність обирає випадково. Як під час революцій або колапсу системи.' },
+];
+
+function getTempLevel(val) {
+    return TEMP_LEVELS.find(l => val <= l.max) || TEMP_LEVELS[TEMP_LEVELS.length - 1];
+}
+
+function updateTemp(val) {
+    val = parseFloat(val);
+    const level = getTempLevel(val);
+    const display = document.getElementById('tempDisplay');
+    const expl = document.getElementById('tempExplanation');
+    const slider = document.getElementById('tempRange');
+
+    display.textContent = level.label + val.toFixed(1);
+    display.style.color = level.color;
+    expl.textContent = level.text;
+    expl.style.borderLeftColor = level.color;
+
+    // Color the slider track
+    const pct = ((val - 0.1) / (2.0 - 0.1)) * 100;
+    slider.style.background = `linear-gradient(to right, ${level.color} ${pct}%, var(--dim) ${pct}%)`;
+}
+
+function updateBattleTemp(val) {
+    val = parseFloat(val);
+    const level = getTempLevel(val);
+    const display = document.getElementById('battleTempDisplay');
+    const expl = document.getElementById('battleTempExplanation');
+    const slider = document.getElementById('battleTempRange');
+
+    display.textContent = level.label + val.toFixed(1);
+    display.style.color = level.color;
+    expl.textContent = level.text;
+    expl.style.borderLeftColor = level.color;
+
+    const pct = ((val - 0.1) / (2.0 - 0.1)) * 100;
+    slider.style.background = `linear-gradient(to right, ${level.color} ${pct}%, var(--dim) ${pct}%)`;
+}
+
+// Init sliders on load
+document.addEventListener('DOMContentLoaded', () => {
+    updateTemp(1.0);
+    updateBattleTemp(1.0);
+});
 
 </script>
 </body>
