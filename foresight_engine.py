@@ -270,6 +270,8 @@ class ForesightEngine:
 
     def get_state(self, headlines: List[str] = None) -> Dict:
         """Current state of the probability field."""
+        # Build chart data from history
+        chart_data = self._build_chart_data()
         return {
             'iteration': self.iteration,
             'futures': [
@@ -285,7 +287,29 @@ class ForesightEngine:
             ],
             'dominant': max(self.futures, key=lambda x: x.probability).name,
             'entropy': self._calculate_entropy(),
+            'chart_data': chart_data,
         }
+
+    def _build_chart_data(self) -> Dict:
+        """
+        Build chart-ready data from iteration history.
+        Returns per-future probability evolution across all steps.
+        Format: { future_name: [p0, p1, p2, ...], labels: [1, 2, 3, ...] }
+        """
+        if not self.history:
+            return {'labels': [], 'series': {}}
+
+        future_names = list(self.history[0].probabilities_after.keys())
+        labels = [s.iteration for s in self.history]
+
+        series = {}
+        for name in future_names:
+            series[name] = [
+                round(s.probabilities_after.get(name, 0) * 100, 1)
+                for s in self.history
+            ]
+
+        return {'labels': labels, 'series': series}
 
     def _calculate_entropy(self) -> float:
         """
