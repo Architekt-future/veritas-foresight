@@ -736,6 +736,62 @@ input[type=range]::-webkit-slider-thumb {
 }
 .rss-item:last-child { border-bottom: none; }
 
+
+/* ── Probability chart ── */
+.chart-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    margin-bottom: 24px;
+    overflow: hidden;
+}
+
+.chart-header {
+    padding: 10px 16px;
+    background: rgba(74,158,255,0.04);
+    border-bottom: 1px solid var(--border);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.chart-wrap {
+    padding: 16px;
+    position: relative;
+}
+
+canvas#probabilityChart {
+    width: 100%;
+    display: block;
+}
+
+.chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 0 16px 14px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.legend-item:hover { color: var(--text); }
+
+.legend-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
 </style>
 </head>
 <body>
@@ -858,6 +914,18 @@ input[type=range]::-webkit-slider-thumb {
                 <span>поточні заголовки що вплинули на резонанс</span>
             </div>
             <div class="rss-list" id="rssList"></div>
+        </div>
+
+        <!-- PROBABILITY CHART -->
+        <div class="chart-panel" id="chartPanel">
+            <div class="chart-header">
+                <span>еволюція ймовірностей · по ітераціях</span>
+                <span id="chartIterCount" style="color:var(--accent)"></span>
+            </div>
+            <div class="chart-wrap">
+                <canvas id="probabilityChart" height="220"></canvas>
+            </div>
+            <div class="chart-legend" id="chartLegend"></div>
         </div>
 
         <div class="history-title">iteration log</div>
@@ -1020,6 +1088,13 @@ function renderResults(data) {
             </div>`;
     });
 
+    // Render chart
+    if (data.final_state.chart_data) {
+        window._lastChartData = data.final_state.chart_data;
+        hiddenSeries = new Set();
+        renderChart(data.final_state.chart_data);
+    }
+
     document.getElementById('results').classList.add('show');
 }
 
@@ -1155,6 +1230,129 @@ async function saveFuture() {
     } catch(e) {
         showError('Не вдалось зберегти: ' + e.message);
     }
+}
+
+
+
+// ── Probability Chart ──────────────────────────────────────────────────────────
+const CHART_COLORS = [
+    '#5fb8ff', '#e0b84a', '#50ffaa', '#ff6060',
+    '#c084fc', '#fb923c', '#34d399', '#f472b6',
+];
+
+let hiddenSeries = new Set();
+
+function renderChart(chartData) {
+    if (!chartData || !chartData.labels || !chartData.labels.length) return;
+
+    const canvas = document.getElementById('probabilityChart');
+    const ctx = canvas.getContext('2d');
+
+    // HiDPI
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    const W = rect.width - 32;
+    const H = 220;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.scale(dpr, dpr);
+
+    const labels = chartData.labels;
+    const series = chartData.series;
+    const names = Object.keys(series);
+
+    const PAD = { top: 16, right: 16, bottom: 32, left: 42 };
+    const cW = W - PAD.left - PAD.right;
+    const cH = H - PAD.top - PAD.bottom;
+
+    // Clear
+    ctx.clearRect(0, 0, W, H);
+
+    // Grid lines
+    ctx.strokeStyle = 'rgba(37,45,61,0.8)';
+    ctx.lineWidth = 1;
+    [0, 25, 50, 75, 100].forEach(v => {
+        const y = PAD.top + cH - (v / 100) * cH;
+        ctx.beginPath();
+        ctx.moveTo(PAD.left, y);
+        ctx.lineTo(PAD.left + cW, y);
+        ctx.stroke();
+        ctx.fillStyle = '#8896b0';
+        ctx.font = '9px Share Tech Mono, monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText(v + '%', PAD.left - 6, y + 3);
+    });
+
+    // X axis labels
+    ctx.fillStyle = '#8896b0';
+    ctx.font = '9px Share Tech Mono, monospace';
+    ctx.textAlign = 'center';
+    labels.forEach((l, i) => {
+        const x = PAD.left + (i / Math.max(labels.length - 1, 1)) * cW;
+        ctx.fillText(l, x, H - PAD.bottom + 14);
+    });
+
+    // X axis label
+    ctx.fillStyle = '#5a6070';
+    ctx.font = '9px Share Tech Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('ітерація', PAD.left + cW / 2, H - 4);
+
+    // Lines
+    names.forEach((name, ni) => {
+        if (hiddenSeries.has(name)) return;
+        const vals = series[name];
+        const color = CHART_COLORS[ni % CHART_COLORS.length];
+
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.lineJoin = 'round';
+
+        vals.forEach((v, i) => {
+            const x = PAD.left + (i / Math.max(labels.length - 1, 1)) * cW;
+            const y = PAD.top + cH - (v / 100) * cH;
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        // Dots at each point
+        vals.forEach((v, i) => {
+            const x = PAD.left + (i / Math.max(labels.length - 1, 1)) * cW;
+            const y = PAD.top + cH - (v / 100) * cH;
+            ctx.beginPath();
+            ctx.arc(x, y, 3, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+        });
+    });
+
+    // Legend
+    const legend = document.getElementById('chartLegend');
+    legend.innerHTML = names.map((name, ni) => {
+        const color = CHART_COLORS[ni % CHART_COLORS.length];
+        const hidden = hiddenSeries.has(name);
+        return `<div class="legend-item ${hidden ? 'dim' : ''}"
+                     onclick="toggleChartSeries('${name}', ${ni})"
+                     style="${hidden ? 'opacity:0.35' : ''}">
+            <div class="legend-dot" style="background:${color}"></div>
+            <span>${esc(name)}</span>
+        </div>`;
+    }).join('');
+
+    document.getElementById('chartIterCount').textContent =
+        `${labels.length} ітерацій`;
+}
+
+function toggleChartSeries(name) {
+    if (hiddenSeries.has(name)) {
+        hiddenSeries.delete(name);
+    } else {
+        hiddenSeries.add(name);
+    }
+    if (window._lastChartData) renderChart(window._lastChartData);
 }
 
 </script>
