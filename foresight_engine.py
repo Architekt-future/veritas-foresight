@@ -324,11 +324,11 @@ class ForesightEngine:
         dominant = final_state['dominant']
         entropy = final_state['entropy']
 
-        # Determine winner — which argument resonates more with dominant future
-        dom_future = next((f for f in self.futures if f.name == dominant), None)
-        res_a = self.calculate_resonance(dom_future, argument_a, field_context) if dom_future else 1.0
-        res_b = self.calculate_resonance(dom_future, argument_b, field_context) if dom_future else 1.0
-        winner = 'A' if res_a >= res_b else 'B'
+        # Determine winner by tracking actual probability of dominant future
+        # after each A-round vs each B-round across all history
+        score_a = sum(s['probs'].get(dominant, 0) for s in history if s['fired'] == 'A')
+        score_b = sum(s['probs'].get(dominant, 0) for s in history if s['fired'] == 'B')
+        winner = 'A' if score_a >= score_b else 'B'
 
         return {
             'argument_a': argument_a,
