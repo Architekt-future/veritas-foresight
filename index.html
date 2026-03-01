@@ -582,6 +582,8 @@ input[type=range]::-webkit-slider-thumb {
     transition: all 0.2s;
 }
 .future-item-toggle:hover { border-color: var(--dim); }
+.future-item-toggle.is-active { color: var(--accent); border-color: var(--accent); }
+.future-item-toggle.is-inactive { color: var(--muted); opacity: 0.5; }
 .future-item.inactive .future-item-toggle { color: var(--green); }
 
 .future-item-del {
@@ -1564,9 +1566,9 @@ function renderFuturesList() {
             <span class="future-item-badge ${f.is_default ? '' : 'custom'}">
                 ${(window._t||I18N.uk)[f.is_default?'default':'custom']}
             </span>
-            <button class="future-item-toggle"
+            <button class="future-item-toggle ${f.is_active ? 'is-active' : 'is-inactive'}"
                 onclick="toggleFuture('${f.id}', ${!f.is_active})">
-                ${f.is_active ? 'вимк' : 'увімк'}
+                ${f.is_active ? '● увімк' : '○ вимк'}
             </button>
             ${!f.is_default ? `<button class="future-item-del"
                 onclick="deleteFuture('${f.id}')">✕</button>` : ''}
