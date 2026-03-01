@@ -124,8 +124,13 @@ def get_active_futures() -> List[Dict]:
         return DEFAULT_FUTURES
     try:
         rows = _request('GET', 'futures?is_active=eq.true&select=*&order=is_default.desc,created_at.asc')
-        return rows if rows else DEFAULT_FUTURES
-    except Exception:
+        # rows=None means request failed — fall back to defaults
+        # rows=[] means all disabled — still fall back (need at least one)
+        if not rows:
+            return DEFAULT_FUTURES
+        return rows
+    except Exception as e:
+        print(f"[foresight_db] get_active_futures error: {e}")
         return DEFAULT_FUTURES
 
 
