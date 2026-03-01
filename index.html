@@ -1695,11 +1695,14 @@ function renderChart(chartData) {
         ctx.fillText(v + '%', PAD.left - 6, y + 3);
     });
 
-    // X axis labels
+    // X axis labels — show max 8 labels to avoid crowding
     ctx.fillStyle = '#8896b0';
     ctx.font = '9px Share Tech Mono, monospace';
     ctx.textAlign = 'center';
+    const maxLabels = 8;
+    const labelStep = Math.max(1, Math.ceil(labels.length / maxLabels));
     labels.forEach((l, i) => {
+        if (i % labelStep !== 0 && i !== labels.length - 1) return;
         const x = PAD.left + (i / Math.max(labels.length - 1, 1)) * cW;
         ctx.fillText(l, x, H - PAD.bottom + 14);
     });
@@ -1714,6 +1717,7 @@ function renderChart(chartData) {
     names.forEach((name, ni) => {
         if (hiddenSeries.has(name)) return;
         const vals = series[name];
+        if (!vals || vals.length === 0) return;
         const color = CHART_COLORS[ni % CHART_COLORS.length];
 
         ctx.beginPath();
