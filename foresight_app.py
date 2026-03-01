@@ -13,6 +13,53 @@ from foresight_db import (
     get_all_futures, get_active_futures,
     create_future, toggle_future, delete_future,
 )
+import urllib.request
+import json as _json
+
+
+def translate_to_english(text: str) -> str:
+    """
+    Translate text to English using Anthropic API if it appears non-English.
+    Uses simple heuristic: if text contains non-ASCII chars — translate.
+    Falls back to original text on any error.
+    """
+    api_key = os.environ.get('ANTHROPIC_API_KEY', '')
+    if not api_key:
+        return text
+
+    # Quick heuristic — if mostly ASCII, skip translation
+    non_ascii = sum(1 for c in text if ord(c) > 127)
+    if non_ascii < len(text) * 0.1:
+        return text  # already mostly English
+
+    try:
+        payload = {
+            'model': 'claude-haiku-4-5-20251001',
+            'max_tokens': 300,
+            'messages': [{
+                'role': 'user',
+                'content': (
+                    f'Translate the following text to English. '
+                    f'Return ONLY the translation, nothing else:\n\n{text}'
+                )
+            }]
+        }
+        data = _json.dumps(payload).encode()
+        req = urllib.request.Request(
+            'https://api.anthropic.com/v1/messages',
+            data=data,
+            headers={
+                'x-api-key': api_key,
+                'anthropic-version': '2023-06-01',
+                'content-type': 'application/json',
+            },
+            method='POST'
+        )
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            result = _json.loads(resp.read().decode())
+            return result['content'][0]['text'].strip()
+    except Exception:
+        return text  # silent fallback
 
 app = Flask(__name__, static_folder='.')
 CORS(app)
@@ -126,6 +173,10 @@ def simulate():
         if not argument:
             return jsonify({'error': 'argument is required'}), 400
 
+        # Auto-translate non-English arguments for better keyword resonance
+        argument_original = argument
+        argument = translate_to_english(argument)
+
         steps = max(1, min(int(data.get('steps', 5)), 10))
         use_field = data.get('use_field', True)
         seed = data.get('seed', None)
@@ -169,7 +220,8 @@ def simulate():
         } for s in results]
 
         return jsonify({
-            'argument': argument,
+            'argument': argument_original,
+            'argument_translated': argument if argument != argument_original else None,
             'steps': steps,
             'final_state': final_state,
             'history': history,
@@ -202,6 +254,11 @@ def battle():
 
         if not arg_a or not arg_b:
             return jsonify({'error': 'argument_a and argument_b are required'}), 400
+
+        # Auto-translate non-English arguments
+        arg_a_original, arg_b_original = arg_a, arg_b
+        arg_a = translate_to_english(arg_a)
+        arg_b = translate_to_english(arg_b)
 
         rounds = max(1, min(int(data.get('rounds', 5)), 10))
         use_field = data.get('use_field', True)
