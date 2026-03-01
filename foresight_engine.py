@@ -315,8 +315,8 @@ class ForesightEngine:
             labels.append(f'{r}A')
             labels.append(f'{r}B')
 
-        # Build chart data from battle history
-        future_names = [f.name for f in self.futures]
+        # Build chart data from battle history — only active futures
+        future_names = [f.name for f in self.futures if getattr(f, 'is_active', True)]
         chart_series = {}
         for name in future_names:
             chart_series[name] = [snap['probs'].get(name, 0) for snap in history]
