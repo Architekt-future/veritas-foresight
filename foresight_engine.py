@@ -25,6 +25,7 @@ class Future:
     core_logic: str            # the fundamental assumption of this future
     probability: float = 1.0
     description: str = ''
+    is_active: bool = True
 
 
 @dataclass
@@ -380,19 +381,26 @@ class ForesightEngine:
         """
         Build chart-ready data from iteration history.
         Returns per-future probability evolution across all steps.
+        Only includes active futures (is_active=True).
         Format: { future_name: [p0, p1, p2, ...], labels: [1, 2, 3, ...] }
         """
         if not self.history:
             return {'labels': [], 'series': {}}
 
-        future_names = list(self.history[0].probabilities_after.keys())
-        labels = [s.iteration for s in self.history]
+        # Only active futures
+        active_names = {f.name for f in self.futures if getattr(f, 'is_active', True)}
+        all_names = list(self.history[0].probabilities_after.keys())
+        future_names = [n for n in all_names if n in active_names]
+
+        # Labels: sorted ascending (oldest → newest)
+        snapshots = sorted(self.history, key=lambda s: s.iteration)
+        labels = [s.iteration for s in snapshots]
 
         series = {}
         for name in future_names:
             series[name] = [
                 round(s.probabilities_after.get(name, 0) * 100, 1)
-                for s in self.history
+                for s in snapshots
             ]
 
         return {'labels': labels, 'series': series}
