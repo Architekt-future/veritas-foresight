@@ -1903,11 +1903,14 @@ function renderBattleChart(chartData) {
     ctx.fillStyle = '#8896b0';
     ctx.font = '9px Share Tech Mono, monospace';
     ctx.textAlign = 'center';
+    // Show round labels (1A only per round, max 8 visible)
+    const maxBLabels = 8;
+    const bLabelStep = Math.max(2, Math.ceil(labels.length / maxBLabels) * 2);
     labels.forEach((l, i) => {
-        if (i % 2 === 0) {
-            const x = PAD.left + (i / Math.max(labels.length - 1, 1)) * cW;
-            ctx.fillText(l, x, H - PAD.bottom + 14);
-        }
+        // Show only A labels (even indices) at correct intervals
+        if (i % bLabelStep !== 0) return;
+        const x = PAD.left + (i / Math.max(labels.length - 1, 1)) * cW;
+        ctx.fillText(l, x, H - PAD.bottom + 14);
     });
 
     // Vertical dividers between rounds (between A and B)
@@ -1915,7 +1918,7 @@ function renderBattleChart(chartData) {
     ctx.lineWidth = 0.5;
     labels.forEach((l, i) => {
         if (l.endsWith('B') && i < labels.length - 1) {
-            const x = PAD.left + ((i + 0.5) / Math.max(labels.length - 1, 1)) * cW;
+            const x = PAD.left + (i / Math.max(labels.length - 1, 1)) * cW;
             ctx.beginPath();
             ctx.moveTo(x, PAD.top);
             ctx.lineTo(x, PAD.top + cH);
