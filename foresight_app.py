@@ -76,7 +76,7 @@ if is_configured():
 
 @app.route('/api/debug/futures')
 def debug_futures():
-    """Debug: show what get_active_futures() returns.\"""
+    """Debug: show what get_active_futures returns."""
     from foresight_db import get_active_futures, is_configured
     rows = get_active_futures()
     return jsonify({
