@@ -1504,7 +1504,11 @@ function renderResults(data) {
     if (data.final_state.chart_data) {
         window._lastChartData = data.final_state.chart_data;
         hiddenSeries = new Set();
-        renderChart(data.final_state.chart_data);
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                renderChart(data.final_state.chart_data);
+            });
+        });
     }
 
     document.getElementById('results').classList.add('show');
@@ -1855,13 +1859,18 @@ function renderBattleResults(data) {
     `;
 
     // Chart
+    document.getElementById('battleResults').style.display = 'block';
+
     if (data.chart_data) {
         window._lastBattleChartData = data.chart_data;
         hiddenBattleSeries = new Set();
-        renderBattleChart(data.chart_data);
+        // Defer chart render until after DOM layout is complete
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                renderBattleChart(data.chart_data);
+            });
+        });
     }
-
-    document.getElementById('battleResults').style.display = 'block';
 }
 
 function renderBattleChart(chartData) {
