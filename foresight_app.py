@@ -74,6 +74,18 @@ if is_configured():
 
 # ── Health ─────────────────────────────────────────────────────────────────────
 
+@app.route('/api/debug/futures')
+def debug_futures():
+    """Debug: show what get_active_futures() returns.\"""
+    from foresight_db import get_active_futures, is_configured
+    rows = get_active_futures()
+    return jsonify({
+        'configured': is_configured(),
+        'count': len(rows),
+        'names': [r['name'] for r in rows],
+        'is_defaults': [r.get('is_default', False) for r in rows],
+    })
+
 @app.route('/api/health')
 def health():
     return jsonify({
